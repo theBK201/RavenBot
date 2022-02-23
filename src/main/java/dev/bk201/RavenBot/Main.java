@@ -10,7 +10,6 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
-//TODO Make a Docker container for easier run/hosting of the bot
 
 public class Main {
     static botToken botToken = new botToken();
