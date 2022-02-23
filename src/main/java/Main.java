@@ -6,10 +6,22 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
+
 public class Main {
+    static botToken botToken = new botToken();
+    public static String token = null;
+
+    static {
+        try {
+            token = botToken.getPropValues();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
-        DiscordClient client = DiscordClient.create("Nzc4OTczNjc2MTA3OTg4OTk0.X7ZxxQ.K_2KJP_mR8i63GklikT_MnHhm3o");
+        DiscordClient client = DiscordClient.create(token);
 
         Mono<Void> login = client.withGateway((GatewayDiscordClient gateway) -> {
             Mono<Void> printOnLogin = gateway.on(ReadyEvent.class, event -> Mono.fromRunnable(() -> {
