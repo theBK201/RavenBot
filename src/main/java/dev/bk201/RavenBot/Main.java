@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
+//TODO Add !help command
 
 public class Main {
     static botToken botToken = new botToken();
@@ -135,7 +136,15 @@ public class Main {
                 return Mono.empty();
             }).then();
 
-            return binChilling.and(xinaChilling).and(socialCreditScoreUp).and(socialCreditScoreDown).and(socialExecution).and(thanosDestroy);
+            Mono<Void> laoganma = gateway.on(MessageCreateEvent.class, event -> {
+                Message message = event.getMessage();
+                if (message.getContent().equalsIgnoreCase("!laoganma")){
+                    return message.getChannel().flatMap(channel -> channel.createMessage("https://tenor.com/view/john-cena-gif-22719753"));
+                }
+                return Mono.empty();
+            }).then();
+
+            return binChilling.and(xinaChilling).and(socialCreditScoreUp).and(socialCreditScoreDown).and(socialExecution).and(thanosDestroy).and(laoganma);
         });
 
         login.and(responses).block();
