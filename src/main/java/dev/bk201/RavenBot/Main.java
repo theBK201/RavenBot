@@ -1,25 +1,20 @@
 package dev.bk201.RavenBot;
 
-import discord4j.common.util.Snowflake;
-import discord4j.core.DiscordClient;
-import discord4j.core.DiscordClientBuilder;
-import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.Embed;
-import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.GuildMessageChannel;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.rest.util.Color;
-import reactor.core.publisher.Mono;
-
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import javax.security.auth.login.LoginException;
+import java.awt.*;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
-//TODO Add !help command to help the users
 //TODO Implement !addResponse so that can users add their responses
 
 public class Main {
@@ -34,42 +29,116 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws LoginException {
 
-        GatewayDiscordClient client = DiscordClientBuilder.create(token).build().login().block();
+        JDA client = JDABuilder.createDefault(token).build();
 
-        client.getEventDispatcher().on(ReadyEvent.class)
-                .subscribe(event -> {
-                 User self = event.getSelf();
-                    System.out.printf("Logged in as %s#%s%n", self.getUsername(), self.getDiscriminator());
-                });
+        System.out.println("Logged in as: " + client.getSelfUser().getAsTag());
+        client.addEventListener(new helloCommand());
+        client.addEventListener(new helpCommand());
+        client.addEventListener(new addCommandHelp());
+        client.addEventListener(new giveResponse());
+        client.upsertCommand("addResponse","This command adds new Response to the bot").queue();
+    }
 
-        EmbedCreateSpec helpMessage = EmbedCreateSpec.builder()
-                .color(Color.BLACK)
-                .title("Help")
-                .description("This message gives you a helpful commands for the Bot")
-                .addField("```!addResponse```" ,"This command will add a new response " , false)
-                .addField("```!listResponses```", "This command will show you all the responses",false)
-                .timestamp(Instant.now())
-                .build();
+    public static class helloCommand extends ListenerAdapter{
+        @Override
+        public void onMessageReceived(MessageReceivedEvent event){
+            //Won't respond to bot
+            if (event.getAuthor().isBot()) return;
+            Message msg = event.getMessage();
+            String content = msg.getContentRaw();
 
-        client.getEventDispatcher().on(MessageCreateEvent.class)
-                .map(MessageCreateEvent::getMessage)
-                .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
-                .filter(message -> message.getContent().equalsIgnoreCase("!help"))
-                .flatMap(Message::getChannel)
-                .flatMap(channel -> channel.createMessage(helpMessage))
-                .subscribe();
-        client.onDisconnect().block();
+            if (content.equalsIgnoreCase("!hi")){
+                MessageChannel channel = event.getChannel();
+                channel.sendMessage("Hello.").queue();
+            }
+        }
+    }
+    public static class helpCommand extends ListenerAdapter{
+        @Override
+        public void onMessageReceived(MessageReceivedEvent event){
+            //Won't respond to bot
+            if (event.getAuthor().isBot()) return;
+            Message msg = event.getMessage();
+            String content = msg.getContentRaw();
+            EmbedBuilder help = new EmbedBuilder();
+
+            help.setColor(Color.BLACK);
+            help.setTitle("Help!");
+            help.setDescription("This message gives you a helpful commands for the Bot");
+            help.addField("```!addResponse !example,your message or link```","This is how you can add new response",false);
+            help.addField("```!listResponses```", "This command will show you all the responses",false);
+            help.setTimestamp(Instant.now());
+
+            if (content.equalsIgnoreCase("!help")){
+                MessageChannel channel = event.getChannel();
+                channel.sendMessageEmbeds(help.build()).queue();
+            }
+        }
+    }
+    public static class addCommandHelp extends ListenerAdapter{
+        @Override
+        public void onMessageReceived(MessageReceivedEvent event){
+            //Won't respond to bot
+            if (event.getAuthor().isBot()) return;
+            Message msg = event.getMessage();
+            String content = msg.getContentRaw();
+
+            if (content.equals("!addResponse")){
+                MessageChannel channel = event.getChannel();
+                channel.sendMessage("Type !help too see how you can add a Response.").queue();
+            }
+        }
+    }
 
 
-//        Mono<Void> login = client.withGateway((GatewayDiscordClient gateway) -> {
-//            Mono<Void> printOnLogin = gateway.on(ReadyEvent.class, event -> Mono.fromRunnable(() -> {
-//                                final User self = event.getSelf();
-//                                System.out.printf("Logged in as %s#%s%n", self.getUsername(), self.getDiscriminator());
-//                            }))
-//                    .then();
+//    public static class addCommand extends ListenerAdapter{
+//        @Override
+//        public void onMessageReceived(MessageReceivedEvent event){
+//            //Won't respond to bot
+//            if (event.getAuthor().isBot()) return;
+//
+//            Message msg = event.getMessage();
+//            String content = msg.getContentRaw();
+//            Responses responses = new Responses();
+//            String[] message;
+//
+//            if (content.contains("!addResponse")){
+//                message = content.split(",");
+//                if (responses.checkForDuplicate(message[1],true)){
+//                    MessageChannel channel = event.getChannel();
+//                    channel.sendMessage("Your response is already in the Database.").queue();
+//                }else {
+//                    responses.insertResponse(message[1],message[2],true);
+//                    MessageChannel channel = event.getChannel();
+//                    channel.sendMessage("Your response has been added.").queue();
+//                }
+//            }
+//        }
+//    }
+    public static class giveResponse extends ListenerAdapter{
+        @Override
+        public void onMessageReceived(MessageReceivedEvent event){
+            //Won't respond to bot
+            if (event.getAuthor().isBot()) return;
+            Message msg = event.getMessage();
+            String content = msg.getContentRaw();
+            Responses responses = new Responses();
+            String response;
 
+            if (content.equalsIgnoreCase("!help")){
+                System.out.println("Here i am");
+            }else {
+                response = responses.searchResponse(content,true);
+                MessageChannel channel = event.getChannel();
+                if(response != null){
+                    channel.sendMessage(response).queue();
+                }else {
+                    channel.sendMessage("Your response is not in the Database.").queue();
+                }
+            }
+        }
     }
 }
 
