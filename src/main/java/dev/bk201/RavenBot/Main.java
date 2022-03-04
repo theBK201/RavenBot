@@ -8,14 +8,14 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
-//TODO Implement !addResponse so that can users add their responses
+//TODO add command !gp, taking random link for gp video
 
 public class Main {
     static botToken botToken = new botToken();
@@ -34,27 +34,41 @@ public class Main {
         JDA client = JDABuilder.createDefault(token).build();
 
         System.out.println("Logged in as: " + client.getSelfUser().getAsTag());
-        client.addEventListener(new helloCommand());
         client.addEventListener(new helpCommand());
-        client.addEventListener(new addCommandHelp());
         client.addEventListener(new giveResponse());
-        client.upsertCommand("addResponse","This command adds new Response to the bot").queue();
+        client.upsertCommand("addresponse","This command adds new Response to the bot")
+                .addOption(OptionType.STRING,"key","Here type the command")
+                .addOption(OptionType.STRING,"value","Give value to your response").queue();
+
+        client.addEventListener(new addResponseCommand());
     }
 
-    public static class helloCommand extends ListenerAdapter{
+        public static class addResponseCommand extends ListenerAdapter{
         @Override
-        public void onMessageReceived(MessageReceivedEvent event){
-            //Won't respond to bot
-            if (event.getAuthor().isBot()) return;
-            Message msg = event.getMessage();
-            String content = msg.getContentRaw();
+            public void onSlashCommandInteraction(SlashCommandInteractionEvent event){
+                String msgKey;
+                String msgValue;
+                Responses responses = new Responses();
 
-            if (content.equalsIgnoreCase("!hi")){
-                MessageChannel channel = event.getChannel();
-                channel.sendMessage("Hello.").queue();
+                //making sure we are handling the right command
+                if(!event.getName().equals("addresponse")) return;
+                msgKey = event.getOption("key").getAsString();
+                msgValue = event.getOption("value").getAsString();
+
+                //Won't respond to bot
+                 if (event.getInteraction().getMember().getUser().isBot()) return;
+
+                 if (responses != null){
+                     if (responses.checkForDuplicate(msgKey,true)){
+                         event.reply("Your response is already in the Database.").setEphemeral(true).queue();
+                     }else {
+                         responses.insertResponse(msgKey,msgValue,true);
+                         event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
+                     }
+                 }
             }
         }
-    }
+
     public static class helpCommand extends ListenerAdapter{
         @Override
         public void onMessageReceived(MessageReceivedEvent event){
@@ -67,7 +81,7 @@ public class Main {
             help.setColor(Color.BLACK);
             help.setTitle("Help!");
             help.setDescription("This message gives you a helpful commands for the Bot");
-            help.addField("```!addResponse !example,your message or link```","This is how you can add new response",false);
+            help.addField("```/addResponse```","This is how you can add new response",false);
             help.addField("```!listResponses```", "This command will show you all the responses",false);
             help.setTimestamp(Instant.now());
 
@@ -77,46 +91,6 @@ public class Main {
             }
         }
     }
-    public static class addCommandHelp extends ListenerAdapter{
-        @Override
-        public void onMessageReceived(MessageReceivedEvent event){
-            //Won't respond to bot
-            if (event.getAuthor().isBot()) return;
-            Message msg = event.getMessage();
-            String content = msg.getContentRaw();
-
-            if (content.equals("!addResponse")){
-                MessageChannel channel = event.getChannel();
-                channel.sendMessage("Type !help too see how you can add a Response.").queue();
-            }
-        }
-    }
-
-
-//    public static class addCommand extends ListenerAdapter{
-//        @Override
-//        public void onMessageReceived(MessageReceivedEvent event){
-//            //Won't respond to bot
-//            if (event.getAuthor().isBot()) return;
-//
-//            Message msg = event.getMessage();
-//            String content = msg.getContentRaw();
-//            Responses responses = new Responses();
-//            String[] message;
-//
-//            if (content.contains("!addResponse")){
-//                message = content.split(",");
-//                if (responses.checkForDuplicate(message[1],true)){
-//                    MessageChannel channel = event.getChannel();
-//                    channel.sendMessage("Your response is already in the Database.").queue();
-//                }else {
-//                    responses.insertResponse(message[1],message[2],true);
-//                    MessageChannel channel = event.getChannel();
-//                    channel.sendMessage("Your response has been added.").queue();
-//                }
-//            }
-//        }
-//    }
     public static class giveResponse extends ListenerAdapter{
         @Override
         public void onMessageReceived(MessageReceivedEvent event){
@@ -125,11 +99,10 @@ public class Main {
             Message msg = event.getMessage();
             String content = msg.getContentRaw();
             Responses responses = new Responses();
+            String[] addedCommands = {"!help","!gp"};
             String response;
 
-            if (content.equalsIgnoreCase("!help")){
-                System.out.println("Here i am");
-            }else {
+            if (!content.equalsIgnoreCase(addedCommands[0])){
                 response = responses.searchResponse(content,true);
                 MessageChannel channel = event.getChannel();
                 if(response != null){
