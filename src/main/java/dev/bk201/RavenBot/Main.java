@@ -16,6 +16,7 @@ import java.time.Instant;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
 //TODO add command !gp, taking random link for gp video
+//TODO limit the key length
 
 public class Main {
     static botToken botToken = new botToken();
@@ -59,11 +60,15 @@ public class Main {
                  if (event.getInteraction().getMember().getUser().isBot()) return;
 
                  if (responses != null){
-                     if (responses.checkForDuplicate(msgKey,true)){
-                         event.reply("Your response is already in the Database.").setEphemeral(true).queue();
+                     if (msgKey.length() >= 70){
+                         event.reply("Your response is too long.").setEphemeral(true).queue();
                      }else {
-                         responses.insertResponse(msgKey,msgValue,true);
-                         event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
+                         if (responses.checkForDuplicate(msgKey,true)){
+                             event.reply("Your response is already in the Database.").setEphemeral(true).queue();
+                         }else {
+                             responses.insertResponse("!" + msgKey,msgValue,true);
+                             event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
+                         }
                      }
                  }
             }
@@ -82,6 +87,7 @@ public class Main {
             help.setTitle("Help!");
             help.setDescription("This message gives you a helpful commands for the Bot");
             help.addField("```/addResponse```","This is how you can add new response",false);
+            help.addField("```!<your Response>```", "Like this you can receive your command",false);
             help.addField("```!listResponses```", "This command will show you all the responses",false);
             help.setTimestamp(Instant.now());
 
@@ -100,15 +106,18 @@ public class Main {
             String content = msg.getContentRaw();
             Responses responses = new Responses();
             String[] addedCommands = {"!help","!gp"};
+            String prefix = "!";
             String response;
 
-            if (!content.equalsIgnoreCase(addedCommands[0])){
-                response = responses.searchResponse(content,true);
-                MessageChannel channel = event.getChannel();
-                if(response != null){
-                    channel.sendMessage(response).queue();
-                }else {
-                    channel.sendMessage("Your response is not in the Database.").queue();
+            if (content.startsWith(prefix)){
+                if (!content.equalsIgnoreCase(addedCommands[0])){
+                    response = responses.searchResponse(content,true);
+                    MessageChannel channel = event.getChannel();
+                    if(response != null){
+                        channel.sendMessage(response).queue();
+                    }else {
+                        channel.sendMessage("Your response is not in the Database.").queue();
+                    }
                 }
             }
         }
