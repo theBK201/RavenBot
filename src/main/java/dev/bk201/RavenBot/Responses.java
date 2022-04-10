@@ -3,8 +3,11 @@ package dev.bk201.RavenBot;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.*;
+
 public class Responses {
     JedisPool pool = new JedisPool("127.0.0.1", 6379);
+
     public String searchResponse(String Key, boolean redis) {
         String response = "";
 
@@ -18,6 +21,25 @@ public class Responses {
 
         return response;
     }
+
+    public List<String> giveAllResponses(boolean redis){
+        Set<String> redisKeys;
+        List<String> keyList = new ArrayList<>();
+        if (redis){
+            try (Jedis jedis = pool.getResource()){
+                redisKeys = jedis.keys("*");
+                Iterator<String> it = redisKeys.iterator();
+
+                while (it.hasNext()){
+                    String data = it.next();
+                    keyList.add(data);
+                }
+            }
+        }
+        return keyList;
+    }
+
+
     public boolean checkForDuplicate(String key, boolean redis){
         boolean duplicate = false;
         if (redis){
