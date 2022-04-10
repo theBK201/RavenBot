@@ -59,13 +59,14 @@ public class Main {
             String msgKey;
             String msgValue;
             Responses responses = new Responses();
-            String[] blackList;
+            String[] addedCommands = {"!help","!gp","!listResponses"};
 
             //making sure we are handling the right command
             if(!event.getName().equals("addresponse")) return;
             msgKey = event.getOption("key").getAsString();
             msgValue = event.getOption("value").getAsString();
             String userID = event.getInteraction().getUser().getAsTag();
+            boolean contains = Arrays.stream(addedCommands).anyMatch(msgKey::equals);
 
              if (responses != null){
                  if (msgValue == null){
@@ -77,20 +78,24 @@ public class Main {
                      if (responses.checkForDuplicate(msgKey,true)){
                          event.reply("Your response is already in the Database.").setEphemeral(true).queue();
                      }else {
-                         responses.insertResponse(msgKey,msgValue,true);
-                         event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
-                         try {
-                             FileWriter fileWriter = new FileWriter("/opt/DiscordBots/logs.txt");
-                             fileWriter.write(userID + " added command: " + msgKey + " at " + Instant.now());
-                             fileWriter.close();
-                         } catch (IOException e) {
-                             e.printStackTrace();
+                         if(contains){
+                             event.reply("You can't add that response.").setEphemeral(true).queue();
+                         }else {
+                             responses.insertResponse(msgKey,msgValue,true);
+                             event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
+                             try {
+                                 FileWriter fileWriter = new FileWriter("~/opt/DiscordBots/logs.txt");
+                                 fileWriter.write(userID + " added command: " + msgKey + " at " + Instant.now());
+                                 fileWriter.close();
+                             } catch (IOException e) {
+                                 e.printStackTrace();
+                             }
                          }
                      }
                  }
              }
-            }
         }
+    }
 
     public Map<Integer, String> blacklist(List<String> user ){
         Map<Integer, String> innerBlacklist = new HashMap<Integer, String>();
