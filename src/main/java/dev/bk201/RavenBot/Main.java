@@ -154,16 +154,16 @@ public class Main {
             String content = msg.getContentRaw();
             Responses responses = new Responses();
             String[] addedCommands = {"!help","!gp","!listResponses"};
-            String response;
+            String response = null;
 
             for (int i = 0; i < addedCommands.length; i++){
                 if(!content.equalsIgnoreCase(addedCommands[i])){
                     response = responses.searchResponse(content,true);
-                    MessageChannel channel = event.getChannel();
-                    if(response != null){
-                        channel.sendMessage(response).queue();
-                    }
                 }
+            }
+            MessageChannel channel = event.getChannel();
+            if(response != null){
+                channel.sendMessage(response).queue();
             }
         }
     }
