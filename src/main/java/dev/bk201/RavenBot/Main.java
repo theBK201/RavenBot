@@ -3,12 +3,15 @@ package dev.bk201.RavenBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+
 import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.io.FileWriter;
@@ -83,13 +86,6 @@ public class Main {
                          }else {
                              responses.insertResponse(msgKey,msgValue,true);
                              event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
-                             try {
-                                 FileWriter fileWriter = new FileWriter("~/opt/DiscordBots/logs.txt");
-                                 fileWriter.write(userID + " added command: " + msgKey + " at " + Instant.now());
-                                 fileWriter.close();
-                             } catch (IOException e) {
-                                 e.printStackTrace();
-                             }
                          }
                      }
                  }
@@ -136,17 +132,34 @@ public class Main {
         public void onMessageReceived(MessageReceivedEvent event){
             //Won't respond to bot
             if (event.getAuthor().isBot()) return;
+
             Message msg = event.getMessage();
             String content = msg.getContentRaw();
-            StringBuilder allResponses = new StringBuilder("Responses: ");
+            StringBuilder allResponses = new StringBuilder();
             Responses responses = new Responses();
 
+            // Building the Embed Message
+            EmbedBuilder pagination = new EmbedBuilder();
+            pagination.setTitle("Raven Responses");
+            pagination.setTimestamp(Instant.now());
+            pagination.setFooter("Page 1");
+            pagination.setColor(0x039108);
+            List<Button> buttons = new ArrayList<Button>();
+            buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+            buttons.add(Button.primary("page_1", Emoji.fromUnicode("◀")));
+            buttons.add(Button.primary("page_2", Emoji.fromUnicode("▶")));
+            buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
+
+            // Getting all the responses and Adding the Responses into the Message
+            for(int i = 0; i < responses.giveAllResponses(true).size(); i++){
+                allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+            }
+
+            pagination.setDescription(allResponses);
+
             if (content.equals("!listResponses")){
-                 for(int i = 0; i < responses.giveAllResponses(true).size(); i++){
-                    allResponses.append(responses.giveAllResponses(true).get(i) + " , ");
-                 }
                 MessageChannel channel = event.getChannel();
-                channel.sendMessage("```" + allResponses + "```").queue();
+                channel.sendMessageEmbeds(pagination.build()).setActionRow(buttons).queue();
             }
         }
     }
@@ -168,7 +181,11 @@ public class Main {
             }
             MessageChannel channel = event.getChannel();
             if(response != null){
-                channel.sendMessage(response).queue();
+                if (response.length() >= 2000){
+                    
+                }else {
+                    channel.sendMessage(response).queue();
+                }
             }
         }
     }
