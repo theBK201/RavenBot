@@ -7,14 +7,16 @@ import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
@@ -51,6 +53,7 @@ public class Main {
 
         client.addEventListener(new addResponseCommand());
         client.addEventListener(new listResponsesCommand());
+        client.addEventListener(new embedButtonsClick());
     }
 
         public static class addResponseCommand extends ListenerAdapter{
@@ -145,13 +148,17 @@ public class Main {
             pagination.setFooter("Page 1");
             pagination.setColor(0x039108);
             List<Button> buttons = new ArrayList<Button>();
-            buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
-            buttons.add(Button.primary("page_1", Emoji.fromUnicode("◀")));
-            buttons.add(Button.primary("page_2", Emoji.fromUnicode("▶")));
-            buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
+//            buttons.add(Button.primary("page_1", Emoji.fromUnicode("⏪")));
+//            buttons.add(Button.primary("page_2", Emoji.fromUnicode("◀")));
+//            buttons.add(Button.primary("page_3", Emoji.fromUnicode("▶")));
+//            buttons.add(Button.primary("page_4", Emoji.fromUnicode("⏩")));
+            buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+            buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+            buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+            buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
 
             // Getting all the responses and Adding the Responses into the Message
-            for(int i = 0; i < responses.giveAllResponses(true).size(); i++){
+            for(int i = 0; i < 30; i++){
                 allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
             }
 
@@ -163,11 +170,102 @@ public class Main {
             }
         }
     }
+
+    public static class embedButtonsClick extends ListenerAdapter{
+        @Override
+        public void onButtonInteraction(ButtonInteractionEvent event) {
+            // Split the ID to 2 Strings
+            // page_1 = page | 1
+            String[] args = event.getButton().getId().split("_");
+
+            // Check if button is a page button
+            if (args[0].equalsIgnoreCase("page")){
+                int pageNum = Integer.valueOf(args[1]);
+
+                // Building the Embed Message
+                EmbedBuilder pagination = new EmbedBuilder();
+                List<Button> buttons = new ArrayList<Button>();
+                StringBuilder allResponses = new StringBuilder();
+                Responses responses = new Responses();
+
+                switch (pageNum){
+                    case 1:
+                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                        pagination.setTitle("Raven Responses");
+                        pagination.setColor(0x039108);
+                        pagination.setFooter("Page 1");
+                        pagination.setTimestamp(Instant.now());
+
+                        for(int i = 0; i < 40; i++){
+                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        }
+                        pagination.setDescription(allResponses);
+                        break;
+
+                    case 2:
+                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                        pagination.setTitle("Raven Responses");
+                        pagination.setColor(0x039108);
+                        pagination.setFooter("Page 2");
+                        pagination.setTimestamp(Instant.now());
+
+                        for(int i = 40; i < responses.giveAllResponses(true).size(); i++){
+                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        }
+                        pagination.setDescription(allResponses);
+                        break;
+
+                    case 3:
+                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                        pagination.setTitle("Raven Responses");
+                        pagination.setColor(0x039108);
+                        pagination.setFooter("Page 3");
+                        pagination.setTimestamp(Instant.now());
+
+                        for(int i = 60; i < responses.giveAllResponses(true).size(); i++){
+                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        }
+                        pagination.setDescription(allResponses);
+                        break;
+
+                    case 4:
+                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                        pagination.setTitle("Raven Responses");
+                        pagination.setColor(0x039108);
+                        pagination.setFooter("Page 4");
+                        pagination.setTimestamp(Instant.now());
+
+                        for(int i = 80; i < responses.giveAllResponses(true).size(); i++){
+                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        }
+                        pagination.setDescription(allResponses);
+                        break;
+                }
+
+                //Edit the Message
+                event.getMessage().editMessageEmbeds(pagination.build()).setActionRow(buttons).queue();
+            }
+        }
+    }
+
     public static class giveResponse extends ListenerAdapter{
         @Override
         public void onMessageReceived(MessageReceivedEvent event){
             //Won't respond to bot
             if (event.getAuthor().isBot()) return;
+
             Message msg = event.getMessage();
             String content = msg.getContentRaw();
             Responses responses = new Responses();
@@ -175,7 +273,7 @@ public class Main {
             String response = null;
 
             for (int i = 0; i < addedCommands.length; i++){
-                if(!content.equalsIgnoreCase(addedCommands[i])){
+                if(!content.contains(addedCommands[i])){
                     response = responses.searchResponse(content,true);
                 }
             }
