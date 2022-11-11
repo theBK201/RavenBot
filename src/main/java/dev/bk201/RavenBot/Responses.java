@@ -13,12 +13,21 @@ public class Responses {
 
         if(redis){
             try(Jedis jedis = pool.getResource()){
-                response = jedis.get(Key);
-            }
-        }else {
-            //TODO search in sqlite
-        }
+                Set<String> rKeys;
 
+                rKeys = jedis.keys("*");
+                Iterator<String> iterator = rKeys.iterator();
+
+                while (iterator.hasNext()){
+                    String data = iterator.next();
+                    if (Key.contains(data)){
+                        response = jedis.get(data);
+                        break;
+                    }
+                }
+
+            }
+        }
         return response;
     }
 
