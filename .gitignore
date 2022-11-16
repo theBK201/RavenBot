@@ -1,4 +1,4 @@
 **/botToken.config
-botToken.config
+src/main/resources/botToken.config
 RavenBot-1.0-SNAPSHOT.jar
 RavenBot-1.0-SNAPSHOT-jar-with-dependencies.jar

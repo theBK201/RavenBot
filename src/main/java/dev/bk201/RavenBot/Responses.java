@@ -20,7 +20,7 @@ public class Responses {
 
                 while (iterator.hasNext()){
                     String data = iterator.next();
-                    if (Key.contains(data)){
+                    if (Key.startsWith(data)){
                         response = jedis.get(data);
                         break;
                     }

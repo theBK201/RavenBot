@@ -50,6 +50,7 @@ public class Main {
         client.addEventListener(new addResponseCommand());
         client.addEventListener(new listResponsesCommand());
         client.addEventListener(new embedButtonsClick());
+        client.addEventListener(new editResponse());
     }
 
     public static class addResponseCommand extends ListenerAdapter {
@@ -61,7 +62,7 @@ public class Main {
             String msgKey;
             String msgValue;
             Responses responses = new Responses();
-            String[] addedCommands = {"!help", "!gp", "!listResponses"};
+            String[] addedCommands = {"!help", "!gp", "!listResponses", "bk", "bк","бk"};
 
             //making sure we are handling the right command
             if (!event.getName().equals("addresponse")) return;
@@ -254,7 +255,6 @@ public class Main {
             }
         }
     }
-
     public static class giveResponse extends ListenerAdapter {
         @Override
         public void onMessageReceived(MessageReceivedEvent event) {
@@ -277,6 +277,21 @@ public class Main {
                 if (response.length() <= 2000) {
                     channel.sendMessage(response).queue();
                 }
+            }
+        }
+    }
+
+    public static class editResponse extends ListenerAdapter {
+        @Override
+        public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+            if (event.getInteraction().getMember().getUser().isBot()) return;
+
+            String msgKey;
+            String msgNewValue;
+            Responses responses = new Responses();
+
+            if (!event.getInteraction().getMember().getUser().equals("")){
+                event.reply("You don't have Permissions to edit Responses");
             }
         }
     }
