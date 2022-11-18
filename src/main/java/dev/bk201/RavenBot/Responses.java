@@ -78,5 +78,17 @@ public class Responses {
         }
         return done;
     }
+
+    public void editResponse(String key, String newValue){
+        try (Jedis jedis = pool.getResource()){
+            jedis.set(key, newValue);
+        }
+    }
+
+    public void deleteResponse(String key){
+        try (Jedis jedis = pool.getResource()){
+            jedis.del(key);
+        }
+    }
 }
 

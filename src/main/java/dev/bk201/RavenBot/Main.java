@@ -50,7 +50,13 @@ public class Main {
         client.addEventListener(new addResponseCommand());
         client.addEventListener(new listResponsesCommand());
         client.addEventListener(new embedButtonsClick());
+        client.upsertCommand("editresponse", "This command edit an existing Response")
+                .addOption(OptionType.STRING, "key", "The name of the existing Key")
+                .addOption(OptionType.STRING, "value", "The new value for the key").queue();
         client.addEventListener(new editResponse());
+        client.upsertCommand("deleteresponse", "This command deletes and existing Response")
+                .addOption(OptionType.STRING, "key", "the name of the existing key").queue();
+        client.addEventListener(new deleteResponse());
     }
 
     public static class addResponseCommand extends ListenerAdapter {
@@ -286,12 +292,32 @@ public class Main {
         public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
             if (event.getInteraction().getMember().getUser().isBot()) return;
 
-            String msgKey;
-            String msgNewValue;
+            String userID = event.getUser().getAsTag();
+            String msgKey = "";
+            String msgNewValue = "";
             Responses responses = new Responses();
 
-            if (!event.getInteraction().getMember().getUser().equals("")){
+            if (userID != "BK201#8111"){
                 event.reply("You don't have Permissions to edit Responses");
+            }else {
+                responses.editResponse(msgKey,msgNewValue);
+            }
+        }
+    }
+
+    public static class deleteResponse extends ListenerAdapter {
+        @Override
+        public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+            if (event.getInteraction().getMember().getUser().isBot()) return;
+
+            String userID = event.getUser().getAsTag();
+            String msgKey = "";
+            Responses responses = new Responses();
+
+            if (userID != "BK201#8111"){
+                event.reply("You don't have Permissions to edit Responses");
+            }else {
+                responses.deleteResponse(msgKey);
             }
         }
     }
