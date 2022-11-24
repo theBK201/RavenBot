@@ -43,18 +43,18 @@ public class Main {
         System.out.println("Logged in as: " + client.getSelfUser().getAsTag());
         client.addEventListener(new helpCommand());
         client.addEventListener(new giveResponse());
-        client.upsertCommand("addresponse", "This command adds new Response to the bot")
+        client.upsertCommand("add_response", "This command adds new Response to the bot")
                 .addOption(OptionType.STRING, "key", "Here type the command")
                 .addOption(OptionType.STRING, "value", "Give value to your response").queue();
 
         client.addEventListener(new addResponseCommand());
         client.addEventListener(new listResponsesCommand());
         client.addEventListener(new embedButtonsClick());
-        client.upsertCommand("editresponse", "This command edit an existing Response")
+        client.upsertCommand("edit_response", "This command edit an existing Response")
                 .addOption(OptionType.STRING, "key", "The name of the existing Key")
                 .addOption(OptionType.STRING, "value", "The new value for the key").queue();
         client.addEventListener(new editResponse());
-        client.upsertCommand("deleteresponse", "This command deletes and existing Response")
+        client.upsertCommand("delete_response", "This command deletes and existing Response")
                 .addOption(OptionType.STRING, "key", "the name of the existing key").queue();
         client.addEventListener(new deleteResponse());
     }
@@ -71,7 +71,7 @@ public class Main {
             String[] addedCommands = {"!help", "!gp", "!listResponses", "bk", "bк","бk"};
 
             //making sure we are handling the right command
-            if (!event.getName().equals("addresponse")) return;
+            if (!event.getName().equals("add_response")) return;
             msgKey = event.getOption("key").getAsString();
             msgValue = event.getOption("value").getAsString();
             String userID = event.getInteraction().getUser().getAsTag();
@@ -271,7 +271,7 @@ public class Main {
             String content = msg.getContentRaw();
             Responses responses = new Responses();
             String[] addedCommands = {"!help", "!gp", "!listResponses"};
-            String response = null;
+            String response = "";
 
             for (int i = 0; i < addedCommands.length; i++) {
                 if (!content.contains(addedCommands[i])) {
@@ -279,10 +279,12 @@ public class Main {
                 }
             }
             MessageChannel channel = event.getChannel();
-            if (response != null) {
+            if (!response.equals("")) {
                 if (response.length() <= 2000) {
                     channel.sendMessage(response).queue();
                 }
+            }else {
+                channel.sendMessage("No response was found").queue();
             }
         }
     }
@@ -293,14 +295,19 @@ public class Main {
             if (event.getInteraction().getMember().getUser().isBot()) return;
 
             String userID = event.getUser().getAsTag();
-            String msgKey = "";
-            String msgNewValue = "";
+            String msgKey;
+            String msgNewValue;
             Responses responses = new Responses();
 
-            if (userID != "BK201#8111"){
-                event.reply("You don't have Permissions to edit Responses");
-            }else {
-                responses.editResponse(msgKey,msgNewValue);
+            if (event.getName().equals("edit_response")){
+                if (!userID.equals("BK201#8111")){
+                    event.reply("You don't have Permissions to edit Responses").setEphemeral(true).queue();
+                }else {
+                    msgKey = event.getOption("key").getAsString();
+                    msgNewValue = event.getOption("value").getAsString();
+                    responses.editResponse(msgKey,msgNewValue);
+                    event.reply("Value for key: " + msgKey + " has changed to: " + msgNewValue).setEphemeral(true).queue();
+                }
             }
         }
     }
@@ -311,13 +318,17 @@ public class Main {
             if (event.getInteraction().getMember().getUser().isBot()) return;
 
             String userID = event.getUser().getAsTag();
-            String msgKey = "";
+            String msgKey;
             Responses responses = new Responses();
 
-            if (userID != "BK201#8111"){
-                event.reply("You don't have Permissions to edit Responses");
-            }else {
-                responses.deleteResponse(msgKey);
+            if (event.getName().equals("delete_response")){
+                if (!userID.equals("BK201#8111")){
+                    event.reply("You don't have Permissions to edit Responses").setEphemeral(true).queue();
+                }else {
+                    msgKey = event.getOption("key").getAsString();
+                    responses.deleteResponse(msgKey);
+                    event.reply("The key: " + msgKey + " has been deleted").setEphemeral(true).queue();
+                }
             }
         }
     }
