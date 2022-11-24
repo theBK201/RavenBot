@@ -284,7 +284,7 @@ public class Main {
                     channel.sendMessage(response).queue();
                 }
             }else {
-                channel.sendMessage("No response was found").queue();
+                return;
             }
         }
     }
