@@ -15,13 +15,13 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
 
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
 //TODO add command !gp, taking random link for gp video
-//TODO add sqlite so that a response can have more than one value
 //TODO give roles to people
 
 public class Main {
@@ -77,21 +77,20 @@ public class Main {
             String userID = event.getInteraction().getUser().getAsTag();
             boolean contains = Arrays.stream(addedCommands).anyMatch(msgKey::equals);
 
-            if (responses != null) {
-                if (msgValue == null) {
-                    event.reply("You can't have empty value").setEphemeral(true).queue();
-                } else if (msgKey.isEmpty()) {
-                    event.reply("You can't have empty key.").setEphemeral(true).queue();
-                } else {
-                    if (responses.checkForDuplicate(msgKey, true)) {
-                        event.reply("Your response is already in the Database.").setEphemeral(true).queue();
+
+            if(msgValue.isEmpty()){
+                event.reply("You can't have empty value").setEphemeral(true).queue();
+            } else if (msgKey.isEmpty()) {
+                event.reply("You can't have empty key").setEphemeral(true).queue();
+            }else {
+                if (responses.checkForDuplicateSQL(msgKey)){
+                    event.reply("Your response is already in the Database.").setEphemeral(true).queue();
+                }else {
+                    if (contains){
+                        event.reply("You can't add that response.").setEphemeral(true).queue();
                     } else {
-                        if (contains) {
-                            event.reply("You can't add that response.").setEphemeral(true).queue();
-                        } else {
-                            responses.insertResponse(msgKey, msgValue, true);
-                            event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
-                        }
+                        responses.insertResponseSQl(msgKey,msgValue,userID);
+                        event.reply("Your response with key '" + msgKey + "' has been added.").setEphemeral(true).queue();
                     }
                 }
             }
@@ -120,7 +119,7 @@ public class Main {
             help.setColor(Color.BLACK);
             help.setTitle("Help!");
             help.setDescription("This message gives you a helpful commands for the Bot");
-            help.addField("```/addResponse```", "This is how you can add new response", false);
+            help.addField("```/add_Response```", "This is how you can add new response", false);
             help.addField("```!<your Response>```", "Like this you can receive your command", false);
             help.addField("```!listResponses```", "This command will show you all the responses", false);
             help.setTimestamp(Instant.now());
@@ -143,30 +142,30 @@ public class Main {
             StringBuilder allResponses = new StringBuilder();
             Responses responses = new Responses();
 
-            // Building the Embed Message
-            EmbedBuilder pagination = new EmbedBuilder();
-            pagination.setTitle("Raven Responses");
-            pagination.setTimestamp(Instant.now());
-            pagination.setFooter("Page 1");
-            pagination.setColor(0x039108);
-            List<Button> buttons = new ArrayList<Button>();
-//            buttons.add(Button.primary("page_1", Emoji.fromUnicode("⏪")));
-//            buttons.add(Button.primary("page_2", Emoji.fromUnicode("◀")));
-//            buttons.add(Button.primary("page_3", Emoji.fromUnicode("▶")));
-//            buttons.add(Button.primary("page_4", Emoji.fromUnicode("⏩")));
-            buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-            buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-            buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-            buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
-
-            // Getting all the responses and Adding the Responses into the Message
-            for (int i = 0; i < 30; i++) {
-                allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
-            }
-
-            pagination.setDescription(allResponses);
-
             if (content.equals("!listResponses")) {
+                // Building the Embed Message
+                EmbedBuilder pagination = new EmbedBuilder();
+                pagination.setTitle("Raven Responses");
+                pagination.setTimestamp(Instant.now());
+                pagination.setFooter("Page 1");
+                pagination.setColor(0x039108);
+                List<Button> buttons = new ArrayList<Button>();
+    //            buttons.add(Button.primary("page_1", Emoji.fromUnicode("⏪")));
+    //            buttons.add(Button.primary("page_2", Emoji.fromUnicode("◀")));
+    //            buttons.add(Button.primary("page_3", Emoji.fromUnicode("▶")));
+    //            buttons.add(Button.primary("page_4", Emoji.fromUnicode("⏩")));
+                buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
+                buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
+                buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
+                buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+
+                // Getting all the responses and Adding the Responses into the Message
+                for (int i = 0; i < 30; i++) {
+                    allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                }
+
+                pagination.setDescription(allResponses);
+
                 MessageChannel channel = event.getChannel();
                 channel.sendMessageEmbeds(pagination.build()).setActionRow(buttons).queue();
             }
@@ -275,13 +274,15 @@ public class Main {
 
             for (int i = 0; i < addedCommands.length; i++) {
                 if (!content.contains(addedCommands[i])) {
-                    response = responses.searchResponse(content, true);
+                    response = responses.searchResponseSQL(content);
                 }
             }
             MessageChannel channel = event.getChannel();
-            if (!response.equals("")) {
-                if (response.length() <= 2000) {
-                    channel.sendMessage(response).queue();
+            if (!response.equals(null)) {
+                if (response.matches(content)){
+                    if (response.length() <= 2000) {
+                        channel.sendMessage(response).queue();
+                    }
                 }
             }else {
                 return;
@@ -305,7 +306,11 @@ public class Main {
                 }else {
                     msgKey = event.getOption("key").getAsString();
                     msgNewValue = event.getOption("value").getAsString();
-                    responses.editResponse(msgKey,msgNewValue);
+                    try {
+                        responses.editResponse(msgKey,msgNewValue);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                     event.reply("Value for key: " + msgKey + " has changed to: " + msgNewValue).setEphemeral(true).queue();
                 }
             }
@@ -326,7 +331,11 @@ public class Main {
                     event.reply("You don't have Permissions to edit Responses").setEphemeral(true).queue();
                 }else {
                     msgKey = event.getOption("key").getAsString();
-                    responses.deleteResponse(msgKey);
+                    try {
+                        responses.deleteResponse(msgKey);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                     event.reply("The key: " + msgKey + " has been deleted").setEphemeral(true).queue();
                 }
             }

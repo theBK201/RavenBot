@@ -1,93 +1,125 @@
 package dev.bk201.RavenBot;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-
+import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 
 public class Responses {
-    JedisPool pool = new JedisPool("127.0.0.1", 6379);
+    private Connection connect(){
+        String url = "jdbc:sqlite:src/main/resources/responses";
+        Connection conn = null;
 
-    public String searchResponse(String Key, boolean redis) {
+        try {
+            conn = DriverManager.getConnection(url);
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return conn;
+    }
+
+    public void insertResponseSQl(String response, String value, String user){
+        String sql = "INSERT INTO responses(response,value,user,datetime) VALUES (?,?,?,?)";
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy.MM.dd-HH:mm:ss");
+        Date date = new Date();
+        Date currentTimestamp = new Timestamp(date.getTime());
+        String datetime = sdf1.format(currentTimestamp);
+
+        try (Connection conn = this.connect()){
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+
+            preparedStatement.setString(1, response);
+            preparedStatement.setString(2, value);
+            preparedStatement.setString(3, user);
+            preparedStatement.setString(4, datetime);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    public String searchResponseSQL(String Key) {
+        String sql = "SELECT response,value FROM responses WHERE response = ?";
         String response = "";
 
-        if(redis){
-            try(Jedis jedis = pool.getResource()){
-                Set<String> rKeys;
+        try(Connection conn = this.connect()){
+            PreparedStatement pstmt = conn.prepareStatement(sql);
 
-                rKeys = jedis.keys("*");
-                Iterator<String> iterator = rKeys.iterator();
+            pstmt.setString(1, Key);
+            ResultSet rs = pstmt.executeQuery();
 
-                while (iterator.hasNext()){
-                    String data = iterator.next();
-                    if (Key.startsWith(data)){
-                        response = jedis.get(data);
-                        break;
-                    }
-                }
-
+            while (rs.next()){
+                response = rs.getString(2);
             }
-        }
+
+        } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         return response;
     }
 
-    public List<String> giveAllResponses(boolean redis){
-        Set<String> redisKeys;
-        List<String> keyList = new ArrayList<>();
-        if (redis){
-            try (Jedis jedis = pool.getResource()){
-                redisKeys = jedis.keys("*");
-                Iterator<String> it = redisKeys.iterator();
 
-                while (it.hasNext()){
-                    String data = it.next();
-                    keyList.add(data);
-                }
-            }
-        }
-        return keyList;
-    }
+//    public List<String> giveAllResponses(boolean redis){
+//        Set<String> redisKeys;
+//        List<String> keyList = new ArrayList<>();
+//        if (redis){
+//            try (Jedis jedis = pool.getResource()){
+//                redisKeys = jedis.keys("*");
+//                Iterator<String> it = redisKeys.iterator();
+//
+//                while (it.hasNext()){
+//                    String data = it.next();
+//                    keyList.add(data);
+//                }
+//            }
+//        }
+//        return keyList;
+//    }
 
-
-    public boolean checkForDuplicate(String key, boolean redis){
+    public boolean checkForDuplicateSQL(String key){
         boolean duplicate = false;
-        if (redis){
-            try (Jedis jedis = pool.getResource()){
-                if (jedis.exists(key)){
-                    duplicate = true;
-                }else {
-                    duplicate = false;
-                }
+        String sql = "SELECT response FROM responses WHERE response = ?";
+        String tmp= "";
+
+        try (Connection conn = this.connect()){
+            PreparedStatement psmt = conn.prepareStatement(sql);
+            psmt.setString(1, key);
+            ResultSet rs = psmt.executeQuery();
+
+            while (rs.next()){
+                tmp = rs.getString(1);
             }
-        }else {
-            //TODO check in sqlite
+
+            if (tmp.equals(key)){
+                duplicate = true;
+            }
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
         }
         return duplicate;
     }
 
-    public boolean insertResponse(String key, String value, Boolean redis) {
-        boolean done = false;
-        if (redis) {
-            try (Jedis jedis = pool.getResource()) {
-                jedis.set(key, value);
-                done = true;
-            }
-        } else {
-            //TODO add the possibility to add data to a sqlite data
-            System.out.println("sqlite must be implemented");
+    public void editResponse(String key, String newValue) throws SQLException {
+        String sql = "UPDATE responses SET value = ?," +
+                     "WHERE response = ?";
+
+        try (Connection conn = this.connect()){
+            PreparedStatement psmt = conn.prepareStatement(sql);
+            psmt.setString(1, newValue);
+            psmt.setString(2, key);
+
+            psmt.executeUpdate();
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
         }
-        return done;
+
     }
 
-    public void editResponse(String key, String newValue){
-        try (Jedis jedis = pool.getResource()){
-            jedis.set(key, newValue);
-        }
-    }
+    public void deleteResponse(String key) throws SQLException {
+        String sql = "DELETE FROM responses WHERE response = ?";
 
-    public void deleteResponse(String key){
-        try (Jedis jedis = pool.getResource()){
-            jedis.del(key);
+        try (Connection conn = this.connect()){
+            PreparedStatement psmt = conn.prepareStatement(sql);
+            psmt.setString(1,key);
+            psmt.executeUpdate();
         }
     }
 }
