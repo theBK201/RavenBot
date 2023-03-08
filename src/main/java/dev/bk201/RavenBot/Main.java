@@ -141,6 +141,7 @@ public class Main {
             String content = msg.getContentRaw();
             StringBuilder allResponses = new StringBuilder();
             Responses responses = new Responses();
+            List<String> responsesList = new ArrayList<>();
 
             if (content.equals("!listResponses")) {
                 // Building the Embed Message
@@ -160,8 +161,10 @@ public class Main {
                 buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
 
                 // Getting all the responses and Adding the Responses into the Message
-                for (int i = 0; i < 30; i++) {
-                    allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                responsesList = responses.giveAllResponses();
+
+                for (int i = 0; i < responsesList.size(); i++) {
+                    allResponses.append(responsesList.get(i) + "\n");
                 }
 
                 pagination.setDescription(allResponses);
@@ -201,7 +204,7 @@ public class Main {
                         pagination.setTimestamp(Instant.now());
 
                         for (int i = 0; i < 40; i++) {
-                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
@@ -216,8 +219,8 @@ public class Main {
                         pagination.setFooter("Page 2");
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 40; i < responses.giveAllResponses(true).size(); i++) {
-                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        for (int i = 40; i < responses.giveAllResponses().size(); i++) {
+                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
@@ -232,8 +235,8 @@ public class Main {
                         pagination.setFooter("Page 3");
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 60; i < responses.giveAllResponses(true).size(); i++) {
-                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        for (int i = 60; i < responses.giveAllResponses().size(); i++) {
+                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
@@ -248,8 +251,8 @@ public class Main {
                         pagination.setFooter("Page 4");
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 80; i < responses.giveAllResponses(true).size(); i++) {
-                            allResponses.append(responses.giveAllResponses(true).get(i) + "\n");
+                        for (int i = 80; i < responses.giveAllResponses().size(); i++) {
+                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
@@ -270,19 +273,28 @@ public class Main {
             String content = msg.getContentRaw();
             Responses responses = new Responses();
             String[] addedCommands = {"!help", "!gp", "!listResponses"};
-            String response = "";
+            boolean usingDefaultCommands = false;
+            String[] responseAndValue = new String[2];
 
             for (int i = 0; i < addedCommands.length; i++) {
                 if (!content.contains(addedCommands[i])) {
-                    response = responses.searchResponseSQL(content);
+                    usingDefaultCommands = true;
                 }
             }
+
+            if (usingDefaultCommands == true){
+                responseAndValue[0] = responses.searchResponseSQL(content)[0];
+                responseAndValue[1] = responses.searchResponseSQL(content)[1];
+            }
+
             MessageChannel channel = event.getChannel();
-            if (!response.equals(null)) {
-                if (response.matches(content)){
-                    if (response.length() <= 2000) {
-                        channel.sendMessage(response).queue();
+            if(responseAndValue[0] != null){
+                if (responseAndValue[0].matches(content)){
+                    if (responseAndValue[0].length() <= 2000) {
+                        channel.sendMessage(responseAndValue[1]).queue();
                     }
+                } else {
+                    return;
                 }
             }else {
                 return;

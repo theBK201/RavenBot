@@ -36,9 +36,9 @@ public class Responses {
             System.out.println(e.getMessage());
         }
     }
-    public String searchResponseSQL(String Key) {
+    public String[] searchResponseSQL(String Key) {
         String sql = "SELECT response,value FROM responses WHERE response = ?";
-        String response = "";
+        String[] response_value = new String[2];
 
         try(Connection conn = this.connect()){
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -47,32 +47,35 @@ public class Responses {
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()){
-                response = rs.getString(2);
+                response_value[0] = rs.getString(1);
+                response_value[1] = rs.getString(2);
             }
 
         } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
-        return response;
+        return response_value;
     }
 
 
-//    public List<String> giveAllResponses(boolean redis){
-//        Set<String> redisKeys;
-//        List<String> keyList = new ArrayList<>();
-//        if (redis){
-//            try (Jedis jedis = pool.getResource()){
-//                redisKeys = jedis.keys("*");
-//                Iterator<String> it = redisKeys.iterator();
-//
-//                while (it.hasNext()){
-//                    String data = it.next();
-//                    keyList.add(data);
-//                }
-//            }
-//        }
-//        return keyList;
-//    }
+    public List<String> giveAllResponses(){
+        String sql = "SELECT response FROM responses";
+        List<String> keyList = new ArrayList<>();
+
+        try (Connection conn = this.connect()){
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()){
+                keyList.add(rs.getString("response"));
+            }
+
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+
+        return keyList;
+    }
 
     public boolean checkForDuplicateSQL(String key){
         boolean duplicate = false;
