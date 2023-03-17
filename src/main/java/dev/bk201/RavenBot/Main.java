@@ -23,6 +23,7 @@ import java.util.List;
 //TODO Add HTTP webserver for the bot, see https://github.com/NanoHttpd/nanohttpd
 //TODO add command !gp, taking random link for gp video
 //TODO give roles to people
+//TODO implement a backup for the db
 
 public class Main {
     static botToken botToken = new botToken();
@@ -141,30 +142,37 @@ public class Main {
             String content = msg.getContentRaw();
             StringBuilder allResponses = new StringBuilder();
             Responses responses = new Responses();
-            List<String> responsesList = new ArrayList<>();
+            List<String> responsesList;
+            List<String> onlyNresponses;
+            List<Integer> listHelpers = responses.getAllHelpers();
+            int pageNumber;
 
             if (content.equals("!listResponses")) {
+                responses.editHelpers(1,0,25);
+                pageNumber = listHelpers.get(0);
+
                 // Building the Embed Message
                 EmbedBuilder pagination = new EmbedBuilder();
                 pagination.setTitle("Raven Responses");
                 pagination.setTimestamp(Instant.now());
-                pagination.setFooter("Page 1");
+                pagination.setFooter("Page " + pageNumber);
                 pagination.setColor(0x039108);
                 List<Button> buttons = new ArrayList<Button>();
-    //            buttons.add(Button.primary("page_1", Emoji.fromUnicode("⏪")));
-    //            buttons.add(Button.primary("page_2", Emoji.fromUnicode("◀")));
-    //            buttons.add(Button.primary("page_3", Emoji.fromUnicode("▶")));
-    //            buttons.add(Button.primary("page_4", Emoji.fromUnicode("⏩")));
-                buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-                buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-                buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-                buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+                buttons.add(Button.primary("previous_page", Emoji.fromUnicode("◀")));
+                buttons.add(Button.primary("next_page", Emoji.fromUnicode("▶")));
+                buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
 
                 // Getting all the responses and Adding the Responses into the Message
+                System.out.println(listHelpers.get(1));
+                System.out.println(listHelpers.get(2));
                 responsesList = responses.giveAllResponses();
+                onlyNresponses = responsesList.subList(listHelpers.get(1),listHelpers.get(2));
 
-                for (int i = 0; i < responsesList.size(); i++) {
-                    allResponses.append(responsesList.get(i) + "\n");
+
+                for (int i = 0; i < onlyNresponses.size(); i++) {
+                    int indexN = responsesList.indexOf(onlyNresponses.get(i));
+                    allResponses.append(indexN + ": " + onlyNresponses.get(i) + "\n");
                 }
 
                 pagination.setDescription(allResponses);
@@ -178,81 +186,137 @@ public class Main {
     public static class embedButtonsClick extends ListenerAdapter {
         @Override
         public void onButtonInteraction(ButtonInteractionEvent event) {
-            // Split the ID to 2 Strings
-            // page_1 = page | 1
+            // Split the ID to 2 Strings -> first_page = first | page
             String[] args = event.getButton().getId().split("_");
 
-            // Check if button is a page button
-            if (args[0].equalsIgnoreCase("page")) {
-                int pageNum = Integer.valueOf(args[1]);
+            // Check if button is a page buttonlistHelpers.get(0);
+            if (args[1].equalsIgnoreCase("page")) {
+                String buttonCommand = args[0];
 
                 // Building the Embed Message
                 EmbedBuilder pagination = new EmbedBuilder();
-                List<Button> buttons = new ArrayList<Button>();
+                List<Button> buttons = new ArrayList<>();
                 StringBuilder allResponses = new StringBuilder();
                 Responses responses = new Responses();
+                List<String> responsesList;
+                List<String> onlyNresponses;
+                List<Integer> listHelpers = responses.getAllHelpers();
+                responsesList = responses.giveAllResponses();
+                int pageNumber;
+                int firstIndex;
+                int secondIndex;
 
-                switch (pageNum) {
-                    case 1:
-                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                switch (buttonCommand) {
+                    case "first":
+                        responses.editHelpers(1,0,25);
+                        pageNumber = listHelpers.get(0);
+
+                        buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+                        buttons.add(Button.primary("previous_page", Emoji.fromUnicode("◀")));
+                        buttons.add(Button.primary("next_page", Emoji.fromUnicode("▶")));
+                        buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
                         pagination.setTitle("Raven Responses");
                         pagination.setColor(0x039108);
-                        pagination.setFooter("Page 1");
+                        pagination.setFooter("Page " + pageNumber);
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 0; i < 40; i++) {
-                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
+                        onlyNresponses = responsesList.subList(listHelpers.get(1),listHelpers.get(2));
+
+                        for (int i = 0; i < onlyNresponses.size(); i++) {
+                            int indexN = responsesList.indexOf(onlyNresponses.get(i));
+                            allResponses.append(indexN + ": " + onlyNresponses.get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
 
-                    case 2:
-                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                    case "previous":
+                        pageNumber = listHelpers.get(0);
+                        firstIndex = listHelpers.get(1);
+                        secondIndex = listHelpers.get(2);
+                        if (firstIndex > 0){
+                            responses.editHelpers(pageNumber-1,firstIndex-25,secondIndex-25);
+                        }else {
+                            if(pageNumber > 1){
+                                pageNumber = 1;
+                            }
+                            responses.editHelpers(pageNumber,firstIndex,secondIndex);
+                        }
+
+                        buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+                        buttons.add(Button.primary("previous_page", Emoji.fromUnicode("◀")));
+                        buttons.add(Button.primary("next_page", Emoji.fromUnicode("▶")));
+                        buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
                         pagination.setTitle("Raven Responses");
                         pagination.setColor(0x039108);
-                        pagination.setFooter("Page 2");
+                        pagination.setFooter("Page " + pageNumber);
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 40; i < responses.giveAllResponses().size(); i++) {
-                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
+                        onlyNresponses = responsesList.subList(firstIndex,secondIndex);
+                        for (int i = 0; i < onlyNresponses.size(); i++) {
+                            int indexN = responsesList.indexOf(onlyNresponses.get(i));
+                            allResponses.append(indexN + ": " + onlyNresponses.get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
 
-                    case 3:
-                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                    case "next":
+                        pageNumber = listHelpers.get(0);
+                        firstIndex = listHelpers.get(1);
+                        secondIndex = listHelpers.get(2);
+                        int tempIndex;
+                        if ((secondIndex+25) < responsesList.size()){
+                            responses.editHelpers(pageNumber+1,firstIndex+25,secondIndex+25);
+                        } else {
+                            if(secondIndex == responsesList.size()){
+                                tempIndex = responsesList.size() - firstIndex;
+                                responses.editHelpers(pageNumber,secondIndex - tempIndex,secondIndex);
+                            }else {
+                                tempIndex = responsesList.size() - secondIndex;
+                                responses.editHelpers(pageNumber+1,firstIndex,secondIndex + tempIndex);
+                            }
+                        }
+
+                        pageNumber = listHelpers.get(0);
+                        buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+                        buttons.add(Button.primary("previous_page", Emoji.fromUnicode("◀")));
+                        buttons.add(Button.primary("next_page", Emoji.fromUnicode("▶")));
+                        buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
                         pagination.setTitle("Raven Responses");
                         pagination.setColor(0x039108);
-                        pagination.setFooter("Page 3");
+                        pagination.setFooter("Page " + pageNumber);
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 60; i < responses.giveAllResponses().size(); i++) {
-                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
+                        System.out.println(firstIndex);
+                        System.out.println(secondIndex);
+                        System.out.println(pageNumber);
+
+                        firstIndex = listHelpers.get(1);
+                        secondIndex = listHelpers.get(2);
+
+                        onlyNresponses = responsesList.subList(firstIndex,secondIndex);
+
+                        for (int i = 0; i < onlyNresponses.size(); i++) {
+                            int indexN = responsesList.indexOf(onlyNresponses.get(i));
+                            allResponses.append(indexN + ": " + onlyNresponses.get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
 
-                    case 4:
-                        buttons.add(Button.primary("page_1", Emoji.fromUnicode("U+30U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_2", Emoji.fromUnicode("U+31U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_3", Emoji.fromUnicode("U+32U+FE0FU+20E3")));
-                        buttons.add(Button.primary("page_4", Emoji.fromUnicode("U+33U+FE0FU+20E3")));
+                    case "last":
+                        buttons.add(Button.primary("first_page", Emoji.fromUnicode("⏪")));
+                        buttons.add(Button.primary("previous_page", Emoji.fromUnicode("◀")));
+                        buttons.add(Button.primary("next_page", Emoji.fromUnicode("▶")));
+                        buttons.add(Button.primary("last_page", Emoji.fromUnicode("⏩")));
                         pagination.setTitle("Raven Responses");
                         pagination.setColor(0x039108);
-                        pagination.setFooter("Page 4");
+                        pagination.setFooter("Last Page");
                         pagination.setTimestamp(Instant.now());
 
-                        for (int i = 80; i < responses.giveAllResponses().size(); i++) {
-                            allResponses.append(responses.giveAllResponses().get(i) + "\n");
+                        onlyNresponses = responsesList.subList(responsesList.size()-25,responsesList.size());
+
+                        for (int i = 0; i < onlyNresponses.size(); i++) {
+                            int indexN = responsesList.indexOf(onlyNresponses.get(i));
+                            allResponses.append(indexN + ": " + onlyNresponses.get(i) + "\n");
                         }
                         pagination.setDescription(allResponses);
                         break;
@@ -260,9 +324,23 @@ public class Main {
 
                 //Edit the Message
                 event.getMessage().editMessageEmbeds(pagination.build()).setActionRow(buttons).queue();
+                event.deferEdit().queue();
             }
         }
     }
+
+    public static class lastListIndex {
+        private int index;
+
+        public int getIndex(){
+            return this.index;
+        }
+
+        public void setIndex(int newIndex){
+            this.index = newIndex;
+        }
+    }
+
     public static class giveResponse extends ListenerAdapter {
         @Override
         public void onMessageReceived(MessageReceivedEvent event) {

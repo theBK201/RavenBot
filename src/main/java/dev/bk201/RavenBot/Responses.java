@@ -6,7 +6,8 @@ import java.util.Date;
 
 public class Responses {
     private Connection connect(){
-        String url = "jdbc:sqlite:src/main/resources/responses";
+        // Does not need opt/DiscordBots/ path because the jar working directory is the same, so it's a relative path
+        String url = "jdbc:sqlite:responses.db";
         Connection conn = null;
 
         try {
@@ -77,6 +78,25 @@ public class Responses {
         return keyList;
     }
 
+    public List<Integer> getAllHelpers(){
+        String sql = "SELECT * FROM responsesListHelper";
+        List<Integer> helpers = new ArrayList<>();
+
+        try (Connection conn = this.connect()){
+            Statement statement = conn.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql);
+
+            while (resultSet.next()){
+                helpers.add(resultSet.getInt(1));
+                helpers.add(resultSet.getInt(2));
+                helpers.add(resultSet.getInt(3));
+            }
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return helpers;
+    }
+
     public boolean checkForDuplicateSQL(String key){
         boolean duplicate = false;
         String sql = "SELECT response FROM responses WHERE response = ?";
@@ -101,19 +121,30 @@ public class Responses {
     }
 
     public void editResponse(String key, String newValue) throws SQLException {
-        String sql = "UPDATE responses SET value = ?," +
-                     "WHERE response = ?";
+        String sql = "UPDATE responses SET value = ? WHERE response = ?";
 
         try (Connection conn = this.connect()){
             PreparedStatement psmt = conn.prepareStatement(sql);
             psmt.setString(1, newValue);
             psmt.setString(2, key);
-
             psmt.executeUpdate();
         }catch (SQLException e){
             System.out.println(e.getMessage());
         }
+    }
 
+    public void editHelpers(int pageN, int fIndex, int sIndex){
+        String sql = "UPDATE responsesListHelper SET pageNumber=?,firstIndex=?,secondIndex=?";
+
+        try (Connection conn = this.connect()){
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setInt(1,pageN);
+            preparedStatement.setInt(2,fIndex);
+            preparedStatement.setInt(3,sIndex);
+            preparedStatement.executeUpdate();
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     public void deleteResponse(String key) throws SQLException {

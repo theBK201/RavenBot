@@ -1,7 +1,10 @@
 dev/bk201/RavenBot/Main.class
-dev/bk201/RavenBot/Responses.class
 dev/bk201/RavenBot/Main$listResponsesCommand.class
 dev/bk201/RavenBot/Main$helpCommand.class
 dev/bk201/RavenBot/botToken.class
 dev/bk201/RavenBot/Main$giveResponse.class
 dev/bk201/RavenBot/Main$addResponseCommand.class
+dev/bk201/RavenBot/Main$embedButtonsClick.class
+dev/bk201/RavenBot/Responses.class
+dev/bk201/RavenBot/Main$editResponse.class
+dev/bk201/RavenBot/Main$deleteResponse.class
